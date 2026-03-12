@@ -252,9 +252,11 @@ http://host.docker.internal:9000
 Inside OpenWebUI:
 
 ```
-Workspace
- → Tools
- → Add Tool
+Admin Panel
+ → Settings
+ → Integrations
+ → Manage Tools
+ → Add Tool +
 ```
 
 Use:
