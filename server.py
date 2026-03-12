@@ -1,7 +1,11 @@
 import os
 from fastapi import FastAPI
+from pydantic import BaseModel
 import requests
 import json
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -67,11 +71,22 @@ TOOL_MAP = {
 
 #     return {"error": "Invalid MCP response"}
 
+class ToolRequest(BaseModel):
+    tool: str
+    arguments: dict = {}
+
 
 def call_tool(tool, args):
 
     server_name = TOOL_MAP.get(tool)
+
+    if not server_name:
+        return {"error": f"Tool '{tool}' not registered"}
+
     server = MCP_SERVERS.get(server_name)
+
+    if not server:
+        return {"error": f"MCP server '{server_name}' not configured"}
 
     headers = {
         "Authorization": f"Bearer {server['token']}",
@@ -97,19 +112,21 @@ def call_tool(tool, args):
         timeout=30
     )
 
-    # Parse SSE safely
+    response.raise_for_status()
+
     for line in response.iter_lines():
-        if line:
-            decoded = line.decode("utf-8")
+        if not line:
+            continue
 
-            if decoded.startswith("data:"):
-                json_data = decoded.replace("data:", "").strip()
+        decoded = line.decode("utf-8")
 
-                try:
-                    import json
-                    return json.loads(json_data)
-                except:
-                    return {"error": "Invalid MCP response"}
+        if decoded.startswith("data:"):
+            json_data = decoded[5:].strip()
+
+            try:
+                return json.loads(json_data)
+            except json.JSONDecodeError:
+                continue
 
     return {"error": "No response from MCP server"}
 
@@ -165,3 +182,21 @@ def range_expenses(start_date: str, end_date: str):
             "end_date": end_date
         }
     )
+
+#Generic RPC Gateway endpoint for any tool
+@app.post("/call_tool") 
+def call_tool_endpoint(request: ToolRequest):
+    return call_tool(request.tool, request.arguments)
+
+#discover tools automatically from TOOL_MAP
+@app.get("/tools")
+def list_tools():
+    tools = []
+
+    for tool, server in TOOL_MAP.items():
+        tools.append({
+            "name": tool,
+            "server": server
+        })
+
+    return {"tools": tools}
