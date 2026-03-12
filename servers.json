@@ -1,0 +1,6 @@
+{
+  "expense": {
+    "url": "https://ai-expense-tracker-mcp-server.fastmcp.app/mcp",
+    "token_env": "MCP_EXPENSE_TOKEN"
+  }
+}

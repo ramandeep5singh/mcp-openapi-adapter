@@ -7,16 +7,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+with open("servers.json") as f:
+    MCP_SERVERS = json.load(f)
+
 app = FastAPI()
 
 # MCP SERVER REGISTRY ---------->
 
-MCP_SERVERS = {
-    "expense": {
-        "url": "https://ai-expense-tracker-mcp-server.fastmcp.app/mcp",
-        "token": os.getenv("MCP_EXPENSE_TOKEN")
-    }
-}
+# MCP_SERVERS = {
+#     "expense": {
+#         "url": "https://ai-expense-tracker-mcp-server.fastmcp.app/mcp",
+#         "token": os.getenv("MCP_EXPENSE_TOKEN")
+#     }
+# }
 
 #TOOL SERVER MAPPING ---------->
 
@@ -87,9 +90,11 @@ def call_tool(tool, args):
 
     if not server:
         return {"error": f"MCP server '{server_name}' not configured"}
+    
+    token = os.getenv(server["token_env"])
 
     headers = {
-        "Authorization": f"Bearer {server['token']}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
         "Accept": "application/json, text/event-stream"
     }
